@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html>
 <head>
     <title>Flappy Helix</title>
     <style>
-        body { text-align: center; background-color: #222; color: white; font-family: sans-serif; }
-        canvas { background-color: #70c5ce; display: block; margin: 20px auto; border: 4px solid #fff; }
+        body { text-align: center; background-color: #222; color: white; font-family: sans-serif; margin: 0; padding-top: 20px; }
+        canvas { background-color: #70c5ce; display: block; margin: 0 auto; border: 4px solid #fff; box-shadow: 0 0 20px rgba(0,0,0,0.5); cursor: pointer; }
     </style>
 </head>
 <body>
@@ -15,36 +14,120 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        let birdY = 150;
-        let gravity = 0.6;
-        let lift = -10;
-        let velocity = 0;
+        let bird = { x: 50, y: 150, width: 20, height: 20, gravity: 0.6, lift: -10, velocity: 0 };
+        let pipes = [];
+        let score = 0;
+        let gameOver = false;
+        let frameCount = 0;
 
         document.addEventListener("click", () => {
-            velocity = lift;
+            if (gameOver) {
+                resetGame();
+            } else {
+                bird.velocity = bird.lift;
+            }
         });
 
-        function update() {
-            velocity += gravity;
-            birdY += velocity;
+        function resetGame() {
+            bird.y = 150;
+            bird.velocity = 0;
+            pipes = [];
+            score = 0;
+            gameOver = false;
+            frameCount = 0;
+        }
 
-            if (birdY > canvas.height - 20) {
-                birdY = canvas.height - 20;
-                velocity = 0;
+        function spawnPipe() {
+            let gap = 120; // Veličina rupe kroz koju prolaziš
+            let minHeight = 50;
+            let maxHeight = canvas.height - gap - 50;
+            let topHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
+
+            pipes.push({
+                x: canvas.width,
+                top: topHeight,
+                bottom: canvas.height - topHeight - gap,
+                width: 50,
+                passed: false
+            });
+        }
+
+        function update() {
+            if (gameOver) return;
+
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+
+            // Udari u dno ili vrh
+            if (bird.y + bird.height > canvas.height || bird.y < 0) {
+                gameOver = true;
             }
-            if (birdY < 0) {
-                birdY = 0;
-                velocity = 0;
+
+            // Stvaranje stubova na svakih 90 frejmova
+            if (frameCount % 90 === 0) {
+                spawnPipe();
             }
+
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].x -= 2; // Brzina kretanja stubova
+
+                // Sudar sa stubovima
+                if (
+                    bird.x < pipes[i].x + pipes[i].width &&
+                    bird.x + bird.width > pipes[i].x &&
+                    (bird.y < pipes[i].top || bird.y + bird.height > canvas.height - pipes[i].bottom)
+                ) {
+                    gameOver = true;
+                }
+
+                // Dodavanje poena kad prođeš stub
+                if (!pipes[i].passed && pipes[i].x + pipes[i].width < bird.x) {
+                    score++;
+                    pipes[i].passed = true;
+                }
+
+                // Brisanje stubova koji su izašli sa ekrana
+                if (pipes[i].x + pipes[i].width < 0) {
+                    pipes.splice(i, 1);
+                }
+            }
+
+            frameCount++;
         }
 
         function draw() {
+            // Pozadina
             ctx.fillStyle = "#70c5ce";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Nacrtaj pticu
+            // Crtanje stubova
+            ctx.fillStyle = "#73bf2e";
+            for (let pipe of pipes) {
+                ctx.fillRect(pipe.x, 0, pipe.width, pipe.top); // Gornji stub
+                ctx.fillRect(pipe.x, canvas.height - pipe.bottom, pipe.width, pipe.bottom); // Donji stub
+            }
+
+            // Crtanje ptice/kockice
             ctx.fillStyle = "#f8e71c";
-            ctx.fillRect(50, birdY, 20, 20);
+            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+
+            // Crtanje poena
+            ctx.fillStyle = "white";
+            ctx.font = "24px sans-serif";
+            ctx.fillText("Poeni: " + score, 20, 40);
+
+            // Ekran za Kraj Igre
+            if (gameOver) {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "white";
+                ctx.font = "30px sans-serif";
+                ctx.fillText("IGRA GOTOVA", 60, 200);
+
+                ctx.font = "18px sans-serif";
+                ctx.fillText("Klikni mišem da pokusaš ponovo", 35, 250);
+            }
         }
 
         function loop() {
