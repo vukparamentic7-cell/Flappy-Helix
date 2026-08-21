@@ -2,9 +2,10 @@
 <html>
 <head>
     <title>Flappy Helix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
         body { text-align: center; background-color: #222; color: white; font-family: sans-serif; margin: 0; padding-top: 20px; }
-        canvas { background-color: #70c5ce; display: block; margin: 0 auto; border: 4px solid #fff; box-shadow: 0 0 20px rgba(0,0,0,0.5); cursor: pointer; }
+        canvas { background-color: #70c5ce; display: block; margin: 0 auto; border: 4px solid #fff; box-shadow: 0 0 20px rgba(0,0,0,0.5); cursor: pointer; touch-action: manipulation; }
     </style>
 </head>
 <body>
@@ -32,13 +33,19 @@
 
         const groundHeight = 50;
 
-        document.addEventListener("click", () => {
+        // Funkcija koja pokreće skok (bilo miš ili dodir)
+        function triggerAction(e) {
+            e.preventDefault(); // sprečava čudno zumiranje na telefonu
             if (gameOver) {
                 resetGame();
             } else {
                 bird.velocity = bird.lift;
             }
-        });
+        }
+
+        // Slušamo i klik mišem i dodir prstom
+        document.addEventListener("click", triggerAction);
+        canvas.addEventListener("touchstart", triggerAction, { passive: false });
 
         function resetGame() {
             bird.y = 150;
@@ -208,7 +215,7 @@
                 ctx.fillText("Najbolji rezultat: " + highScore, 75, 250);
 
                 ctx.font = "16px sans-serif";
-                ctx.fillText("Klikni mišem da pokušaš ponovo", 35, 300);
+                ctx.fillText("Dodirni ekran za ponovo", 65, 300);
             }
         }
 
