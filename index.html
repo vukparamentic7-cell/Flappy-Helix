@@ -14,14 +14,23 @@
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        let bird = { x: 50, y: 150, width: 20, height: 20, gravity: 0.6, lift: -10, velocity: 0 };
+        let bird = { 
+            x: 50, 
+            y: 150, 
+            width: 28, 
+            height: 22, 
+            gravity: 0.6, 
+            lift: -10, 
+            velocity: 0,
+            rotation: 0 
+        };
         let pipes = [];
         let score = 0;
         let highScore = localStorage.getItem("flappyHighScore") || 0;
         let gameOver = false;
         let frameCount = 0;
 
-        const groundHeight = 50; // Visina trave na dnu
+        const groundHeight = 50;
 
         document.addEventListener("click", () => {
             if (gameOver) {
@@ -34,6 +43,7 @@
         function resetGame() {
             bird.y = 150;
             bird.velocity = 0;
+            bird.rotation = 0;
             pipes = [];
             score = 0;
             gameOver = false;
@@ -61,48 +71,48 @@
             bird.velocity += bird.gravity;
             bird.y += bird.velocity;
 
-            // Udari u plafon (vrh)
+            // Rotacija ptice na osnovu brzine padanja/skakanja
+            bird.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (bird.velocity / 10)));
+
+            // Udari u plafon
             if (bird.y < 0) {
                 bird.y = 0;
                 bird.velocity = 0;
             }
 
-            // Sletanje na travu (dno) - NEMA UMIRANJA, samo stane na travu
+            // Sletanje na travu
             let floorLevel = canvas.height - groundHeight - bird.height;
             if (bird.y > floorLevel) {
                 bird.y = floorLevel;
-                bird.velocity = 0; 
+                bird.velocity = 0;
+                bird.rotation = 0;
             }
 
-            // Stvaranje stubova na svakih 90 frejmova
             if (frameCount % 90 === 0) {
                 spawnPipe();
             }
 
             for (let i = pipes.length - 1; i >= 0; i--) {
-                pipes[i].x -= 2; // Brzina kretanja stubova
+                pipes[i].x -= 2;
 
-                // Sudar sa stubovima (Jedini uzrok smrti!)
+                // Sudar sa stubovima
                 if (
                     bird.x < pipes[i].x + pipes[i].width &&
                     bird.x + bird.width > pipes[i].x &&
                     (bird.y < pipes[i].top || bird.y + bird.height > canvas.height - pipes[i].bottom)
                 ) {
                     gameOver = true;
-                    // Provera i čuvanje High Score-a
                     if (score > highScore) {
                         highScore = score;
                         localStorage.setItem("flappyHighScore", highScore);
                     }
                 }
 
-                // Dodavanje poena kad prođeš stub
                 if (!pipes[i].passed && pipes[i].x + pipes[i].width < bird.x) {
                     score++;
                     pipes[i].passed = true;
                 }
 
-                // Brisanje stubova koji su izašli sa ekrana
                 if (pipes[i].x + pipes[i].width < 0) {
                     pipes.splice(i, 1);
                 }
@@ -112,28 +122,65 @@
         }
 
         function draw() {
-            // Pozadina (nebo)
+            // Pozadina
             ctx.fillStyle = "#70c5ce";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Crtanje stubova
+            // Stubovi
             ctx.fillStyle = "#73bf2e";
             for (let pipe of pipes) {
                 ctx.fillRect(pipe.x, 0, pipe.width, pipe.top); 
                 ctx.fillRect(pipe.x, canvas.height - pipe.bottom, pipe.width, pipe.bottom); 
             }
 
-            // CRTANJE TRAVE NA DNU
+            // Trava na dnu
             ctx.fillStyle = "#388E3C"; 
             ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
             ctx.fillStyle = "#4CAF50"; 
             ctx.fillRect(0, canvas.height - groundHeight, canvas.width, 10);
 
-            // Crtanje ptice/kockice
-            ctx.fillStyle = "#f8e71c";
-            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+            // CRTANJE PRAVE PTICE UMESTO KVADRATA
+            ctx.save();
+            ctx.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
+            ctx.rotate(bird.rotation);
 
-            // Crtanje poena i High Score-a
+            // Telo ptice (žuto)
+            ctx.fillStyle = "#f8e71c";
+            ctx.beginPath();
+            ctx.ellipse(0, 0, bird.width / 2, bird.height / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#b39b00";
+            ctx.stroke();
+
+            // Krilo (narandžasto)
+            ctx.fillStyle = "#f5a623";
+            ctx.beginPath();
+            ctx.ellipse(-4, 3, 8, 5, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Oko (belo sa crnom zenicom)
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(6, -4, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(7, -4, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Kljun (narandžasti trougao)
+            ctx.fillStyle = "#f57c00";
+            ctx.beginPath();
+            ctx.moveTo(12, -3);
+            ctx.lineTo(20, 0);
+            ctx.lineTo(12, 3);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+
+            // Poeni i High Score
             ctx.fillStyle = "white";
             ctx.font = "20px sans-serif";
             ctx.fillText("Poeni: " + score, 20, 35);
