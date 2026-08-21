@@ -1,1 +1,59 @@
 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flappy Helix</title>
+    <style>
+        body { text-align: center; background-color: #222; color: white; font-family: sans-serif; }
+        canvas { background-color: #70c5ce; display: block; margin: 20px auto; border: 4px solid #fff; }
+    </style>
+</head>
+<body>
+    <h1>Flappy Helix</h1>
+    <canvas id="gameCanvas" width="320" height="480"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let birdY = 150;
+        let gravity = 0.6;
+        let lift = -10;
+        let velocity = 0;
+
+        document.addEventListener("click", () => {
+            velocity = lift;
+        });
+
+        function update() {
+            velocity += gravity;
+            birdY += velocity;
+
+            if (birdY > canvas.height - 20) {
+                birdY = canvas.height - 20;
+                velocity = 0;
+            }
+            if (birdY < 0) {
+                birdY = 0;
+                velocity = 0;
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = "#70c5ce";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Nacrtaj pticu
+            ctx.fillStyle = "#f8e71c";
+            ctx.fillRect(50, birdY, 20, 20);
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        loop();
+    </script>
+</body>
+</html>
