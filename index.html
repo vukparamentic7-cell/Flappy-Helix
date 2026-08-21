@@ -17,6 +17,7 @@
         let bird = { x: 50, y: 150, width: 20, height: 20, gravity: 0.6, lift: -10, velocity: 0 };
         let pipes = [];
         let score = 0;
+        let highScore = localStorage.getItem("flappyHighScore") || 0;
         let gameOver = false;
         let frameCount = 0;
 
@@ -70,7 +71,7 @@
             let floorLevel = canvas.height - groundHeight - bird.height;
             if (bird.y > floorLevel) {
                 bird.y = floorLevel;
-                bird.velocity = 0; // Zaustavi pad, ali igra i dalje traje!
+                bird.velocity = 0; 
             }
 
             // Stvaranje stubova na svakih 90 frejmova
@@ -81,13 +82,18 @@
             for (let i = pipes.length - 1; i >= 0; i--) {
                 pipes[i].x -= 2; // Brzina kretanja stubova
 
-                // Sudar sa stubovima (Ovo je jedino od čega se umire!)
+                // Sudar sa stubovima (Jedini uzrok smrti!)
                 if (
                     bird.x < pipes[i].x + pipes[i].width &&
                     bird.x + bird.width > pipes[i].x &&
                     (bird.y < pipes[i].top || bird.y + bird.height > canvas.height - pipes[i].bottom)
                 ) {
                     gameOver = true;
+                    // Provera i čuvanje High Score-a
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem("flappyHighScore", highScore);
+                    }
                 }
 
                 // Dodavanje poena kad prođeš stub
@@ -113,38 +119,42 @@
             // Crtanje stubova
             ctx.fillStyle = "#73bf2e";
             for (let pipe of pipes) {
-                ctx.fillRect(pipe.x, 0, pipe.width, pipe.top); // Gornji stub
-                ctx.fillRect(pipe.x, canvas.height - pipe.bottom, pipe.width, pipe.bottom); // Donji stub
+                ctx.fillRect(pipe.x, 0, pipe.width, pipe.top); 
+                ctx.fillRect(pipe.x, canvas.height - pipe.bottom, pipe.width, pipe.bottom); 
             }
 
-            // CRTANJE TRAVE NA DNU (lepa grafika)
-            ctx.fillStyle = "#388E3C"; // Tamnija zelena baza trave
+            // CRTANJE TRAVE NA DNU
+            ctx.fillStyle = "#388E3C"; 
             ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
-            
-            ctx.fillStyle = "#4CAF50"; // Svetlija trava gornji sloj
+            ctx.fillStyle = "#4CAF50"; 
             ctx.fillRect(0, canvas.height - groundHeight, canvas.width, 10);
 
             // Crtanje ptice/kockice
             ctx.fillStyle = "#f8e71c";
             ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
 
-            // Crtanje poena
+            // Crtanje poena i High Score-a
             ctx.fillStyle = "white";
-            ctx.font = "24px sans-serif";
-            ctx.fillText("Poeni: " + score, 20, 40);
+            ctx.font = "20px sans-serif";
+            ctx.fillText("Poeni: " + score, 20, 35);
+            ctx.fillText("Najbolji: " + highScore, 20, 65);
 
-            // Ekran za Kraj Igre (samo kad udariš u stub)
+            // Ekran za Kraj Igre
             if (gameOver) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = "#ff4d4d";
-                ctx.font = "30px sans-serif";
-                ctx.fillText("UDARIO U STUB!", 45, 200);
+                ctx.font = "28px sans-serif";
+                ctx.fillText("UDARIO U STUB!", 50, 180);
 
                 ctx.fillStyle = "white";
-                ctx.font = "18px sans-serif";
-                ctx.fillText("Klikni mišem da pokušaš ponovo", 35, 250);
+                ctx.font = "20px sans-serif";
+                ctx.fillText("Tvoji poeni: " + score, 100, 220);
+                ctx.fillText("Najbolji rezultat: " + highScore, 75, 250);
+
+                ctx.font = "16px sans-serif";
+                ctx.fillText("Klikni mišem da pokušaš ponovo", 35, 300);
             }
         }
 
